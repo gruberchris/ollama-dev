@@ -1,5 +1,38 @@
 import ollama
 
+
+def report_stats(response_chunk):
+    total_duration_ns = response_chunk.total_duration
+    total_duration_ms = total_duration_ns / 1_000_000
+    total_duration_ms_rounded = round(total_duration_ms, 2)
+    load_duration_ns = response_chunk.load_duration
+    load_duration_ms = load_duration_ns / 1_000_000
+    load_duration_ms_rounded = round(load_duration_ms, 2)
+    prompt_eval_count = response_chunk.prompt_eval_count
+    prompt_eval_duration_ns = response_chunk.prompt_eval_duration
+    prompt_eval_duration_ms = prompt_eval_duration_ns / 1_000_000
+    prompt_eval_duration_ms_rounded = round(prompt_eval_duration_ms, 2)
+    prompt_eval_duration_sec = prompt_eval_duration_ms / 1_000
+    prompt_eval_rate = prompt_eval_count / prompt_eval_duration_sec
+    prompt_eval_rate_rounded = round(prompt_eval_rate, 2)
+    eval_count = response_chunk.eval_count
+    eval_duration_ns = response_chunk.eval_duration
+    eval_duration_ms = eval_duration_ns / 1_000_000
+    eval_duration_ms_rounded = round(eval_duration_ms, 2)
+    eval_duration_sec = eval_duration_ms / 1_000
+    eval_rate = eval_count / eval_duration_sec
+    eval_rate_rounded = round(eval_rate, 2)
+
+    print(f"\n\ntotal duration: {total_duration_ms_rounded}ms")
+    print(f"load duration: {load_duration_ms_rounded}ms")
+    print(f"prompt eval count: {prompt_eval_count} tokens")
+    print(f"prompt eval duration: {prompt_eval_duration_ms_rounded}ms")
+    print(f"prompt eval rate: {prompt_eval_rate_rounded} tokens/sec")
+    print(f"eval count: {eval_count} tokens")
+    print(f"eval duration: {eval_duration_ms_rounded}ms")
+    print(f"eval rate: {eval_rate_rounded} tokens/sec")
+    
+    
 client = ollama.Client()
 
 model = "gruber-coder-1M:latest"
@@ -29,10 +62,6 @@ for chunk in response:
         print(str(chunk.response), end="", flush=True)
 
     if chunk.done:
-        total_duration_ns = chunk.total_duration
-        total_duration_s = total_duration_ns / 1_000_000_000
-        print(f"\n\nResponse time: {total_duration_s} seconds")
-        print(f"Total prompt tokens: {chunk.prompt_eval_count}")
-        print(f"Total response tokens: {chunk.eval_count}")
+        report_stats(chunk)
         print("\n" + "="*50)
         break
