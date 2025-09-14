@@ -1,4 +1,7 @@
+import datetime
+
 import ollama
+from ollama import ProcessResponse
 
 
 def report_stats(response_chunk):
@@ -31,6 +34,35 @@ def report_stats(response_chunk):
     print(f"eval count: {eval_count} tokens")
     print(f"eval duration: {eval_duration_ms_rounded}ms")
     print(f"eval rate: {eval_rate_rounded} tokens/sec")
+
+
+def humanize_timedelta(td: datetime.timedelta) -> str:
+    seconds = int(td.total_seconds())
+    if seconds < 60:
+        return f"{seconds} seconds from now"
+    elif seconds < 3600:
+        minutes = seconds // 60
+        return f"{minutes} minutes from now"
+    elif seconds < 86400:
+        hours = seconds // 3600
+        return f"{hours} hours from now"
+    else:
+        days = seconds // 86400
+        return f"{days} days from now"
+
+
+def process_report(process_response: ProcessResponse):
+    for ollama_model in process_response.models:
+        print(f"\n\nmodel: {ollama_model.name}")
+        print(f"context length: {ollama_model.context_length} bytes")
+
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        time_until_expiration = ollama_model.expires_at - current_time
+        print(f"expiration: {humanize_timedelta(time_until_expiration)}")
+
+        print(f"family: {ollama_model.details.family}")
+        print(f"parameter size: {ollama_model.details.parameter_size}")
+        print(f"quantization: {ollama_model.details.quantization_level}\n")
     
     
 client = ollama.Client()
@@ -62,6 +94,7 @@ for chunk in response:
         print(str(chunk.response), end="", flush=True)
 
     if chunk.done:
+        print("\n" + "=" * 50)
         report_stats(chunk)
-        print("\n" + "="*50)
+        process_report(client.ps())
         break
